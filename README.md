@@ -1,3 +1,7 @@
+# cocos-creator
+
+usage : `npm install github:cocos-creator/tween.js#cocos-master --save-dev`。
+
 # tween.js
 
 JavaScript tweening engine for easy animations, incorporating optimised Robert Penner's equations.
