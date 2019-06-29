@@ -1,13 +1,13 @@
 "use strict";
 exports.__esModule = true;
-var uglify = require("uglify-js");
 var fs = require("fs");
-var source = fs.readFileSync("src/Tween.js", "utf8");
+var uglify = require("uglify-js");
+var source = fs.readFileSync('src/Tween.js', 'utf8');
 var code = uglify.minify(source, {
     output: {},
     sourceMap: {
         includeSources: true,
-        url: "Tween.min.js.map"
+        url: 'Tween.min.js.map'
     }
 });
 if (!fs.existsSync('cocos')) {

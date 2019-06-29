@@ -1,18 +1,18 @@
+import * as fs from 'fs';
 import * as uglify from 'uglify-js';
-import * as fs from 'fs'
 
-var source = fs.readFileSync("src/Tween.js", "utf8");
-let code = uglify.minify(
+const source = fs.readFileSync('src/Tween.js', 'utf8');
+const code = uglify.minify(
     source,
     {
         output: {
         },
         sourceMap: {
             includeSources: true,
-            url: "Tween.min.js.map"
-        }
-    }
-)
+            url: 'Tween.min.js.map',
+        },
+    },
+);
 if (!fs.existsSync('cocos')) {
     fs.mkdirSync('cocos');
 }
