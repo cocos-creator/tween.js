@@ -3,7 +3,8 @@
     "extends": [
         "tslint:recommended"
     ],
-    "jsRules": {},
+    "jsRules": {
+    },
     "rules": {
         "quotemark": [
             true,
@@ -25,7 +26,8 @@
         "max-line-length": [
             true,
             160
-        ]
+        ],
+        "prefer-for-of": false
     },
     "rulesDirectory": []
 }

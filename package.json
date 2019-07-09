@@ -27,7 +27,9 @@
     "semantic-release": "semantic-release",
     "build-minify": "tsc cocos/minify/build.ts",
     "minify": "node cocos/minify/build.js",
-    "build": "npm run build-minify && npm run minify" 
+    "build": "npm run build-minify && npm run minify && npm run tsc-build-cc-tween && npm run tsc-build-cc-test",
+    "tsc-build-cc-tween": "tsc --build cocos/cctween/src/tsconfig.json",
+    "tsc-build-cc-test": "tsc --build cocos/test/tsconfig.json"
   },
   "author": "JayceLai",
   "devDependencies": {

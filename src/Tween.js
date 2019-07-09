@@ -144,6 +144,8 @@ TWEEN.Tween = function (object, group) {
 	this._group = group || TWEEN;
 	this._id = TWEEN.nextId();
 
+	// FOR COCOS TWEEN UNION
+	this._onCompleteCallbackForCocos = null;
 };
 
 TWEEN.Tween.prototype = {
@@ -157,7 +159,7 @@ TWEEN.Tween.prototype = {
 
 	to: function (properties, duration) {
 
-		this._valuesEnd = Object.create(properties);
+		this._valuesEnd = JSON.parse(JSON.stringify(properties));
 
 		if (duration !== undefined) {
 			this._duration = duration;
@@ -183,36 +185,7 @@ TWEEN.Tween.prototype = {
 		this._startTime = time !== undefined ? typeof time === 'string' ? TWEEN.now() + parseFloat(time) : time : TWEEN.now();
 		this._startTime += this._delayTime;
 
-		for (var property in this._valuesEnd) {
-
-			// Check if an Array was provided as property value
-			if (this._valuesEnd[property] instanceof Array) {
-
-				if (this._valuesEnd[property].length === 0) {
-					continue;
-				}
-
-				// Create a local copy of the Array with the start value at the front
-				this._valuesEnd[property] = [this._object[property]].concat(this._valuesEnd[property]);
-
-			}
-
-			// If `to()` specifies a property that doesn't exist in the source object,
-			// we should not set that property in the object
-			if (this._object[property] === undefined) {
-				continue;
-			}
-
-			// Save the starting value.
-			this._valuesStart[property] = this._object[property];
-
-			if ((this._valuesStart[property] instanceof Array) === false) {
-				this._valuesStart[property] *= 1.0; // Ensures we're using numbers, not strings
-			}
-
-			this._valuesStartRepeat[property] = this._valuesStart[property] || 0;
-
-		}
+		TWEEN._recursiveObjetCopy(this._valuesEnd, this._valuesStart, this._valuesStartRepeat, this._object);
 
 		return this;
 
@@ -364,40 +337,7 @@ TWEEN.Tween.prototype = {
 
 		value = this._easingFunction(elapsed);
 
-		for (property in this._valuesEnd) {
-
-			// Don't update properties that do not exist in the source object
-			if (this._valuesStart[property] === undefined) {
-				continue;
-			}
-
-			var start = this._valuesStart[property] || 0;
-			var end = this._valuesEnd[property];
-
-			if (end instanceof Array) {
-
-				this._object[property] = this._interpolationFunction(end, value);
-
-			} else {
-
-				// Parses relative end values with start as base (e.g.: +10, -3)
-				if (typeof (end) === 'string') {
-
-					if (end.charAt(0) === '+' || end.charAt(0) === '-') {
-						end = start + parseFloat(end);
-					} else {
-						end = parseFloat(end);
-					}
-				}
-
-				// Protect against non numeric properties.
-				if (typeof (end) === 'number') {
-					this._object[property] = start + (end - start) * value;
-				}
-
-			}
-
-		}
+		TWEEN._recursiveObjetUpdate(this._valuesEnd, this._valuesStart, value, this._object, this);
 
 		if (this._onUpdateCallback !== null) {
 			this._onUpdateCallback(this._object, elapsed);
@@ -452,12 +392,16 @@ TWEEN.Tween.prototype = {
 					this._onCompleteCallback(this._object);
 				}
 
-				for (var i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
-					// Make the chained tweens start exactly at the time they should,
-					// even if the `update()` method was called way past the duration of the tween
-					this._chainedTweens[i].start(this._startTime + this._duration);
+				// this is mean using cocos tween wraper
+				if (this._onCompleteCallbackForCocos !== null) {
+					this._onCompleteCallbackForCocos(this);
+				} else {
+					for (var i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
+						// Make the chained tweens start exactly at the time they should,
+						// even if the `update()` method was called way past the duration of the tween
+						this._chainedTweens[i].start(this._startTime + this._duration);
+					}
 				}
-
 				return false;
 
 			}
@@ -466,9 +410,100 @@ TWEEN.Tween.prototype = {
 
 		return true;
 
+	},
+
+	cc_onCompleteCallback: function (callback) {
+		this._onCompleteCallbackForCocos = callback;
 	}
 };
 
+TWEEN._recursiveObjetUpdate = function (valuesEnd, valuesStart, value, target, tween) {
+
+	var _end;
+	var _start;
+	for (var property in valuesEnd) {
+
+		_end = valuesEnd[property];
+		_start = valuesStart[property];
+
+
+		if (_end instanceof Array) {
+
+			target[property] = tween._interpolationFunction(_end, value);
+
+		} else {
+
+			// Parses relative end values with start as base (e.g.: +10, -3)
+			if (typeof (_end) === 'string') {
+
+				if (_end.charAt(0) === '+' || _end.charAt(0) === '-') {
+					_end = _start + parseFloat(_end);
+				} else {
+					_end = parseFloat(_end);
+				}
+
+			}
+
+			if (typeof (_end) === 'number') {
+
+				target[property] = _start + (_end - _start) * value;
+				// console.log("Equation 2 : ", property, value, target, start, end);
+
+			} else if (typeof (_end) === 'object') {
+
+				TWEEN._recursiveObjetUpdate(_end, _start, value, target[property], tween);
+
+			}
+
+		}
+	}
+};
+
+
+TWEEN._recursiveObjetCopy = function (valuesEnd, valuesStart, valuesStartRepeat, target) {
+
+	for (var property in valuesEnd) {
+
+		// Check if an Array was provided as property value
+		if (valuesEnd[property] instanceof Array) {
+
+			if (valuesEnd[property].length === 0) {
+				continue;
+			}
+
+			// Create a local copy of the Array with the start value at the front
+			valuesEnd[property] = [target[property]].concat(valuesEnd[property]);
+
+		}
+
+		// If `to()` specifies a property that doesn't exist in the source object,
+		// we should not set that property in the object
+		if (target[property] === undefined) {
+			continue;
+		}
+
+		if (typeof target[property] === "object") {
+
+			valuesStart[property] = {};
+			valuesStartRepeat[property] = {};
+			TWEEN._recursiveObjetCopy(valuesEnd[property], valuesStart[property], valuesStartRepeat[property], target[property]);
+
+		} else {
+
+			// Save the starting value.
+			valuesStart[property] = target[property];
+
+			if (typeof (valuesStart[property]) === 'string') {
+				valuesStart[property] *= 1.0; // Ensures we're using numbers, not strings
+			}
+
+			valuesStartRepeat[property] = valuesStart[property] || 0;
+
+		}
+
+	}
+
+};
 
 TWEEN.Easing = {
 

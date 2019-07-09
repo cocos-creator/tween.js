@@ -13,5 +13,5 @@ var code = uglify.minify(source, {
 if (!fs.existsSync('cocos')) {
     fs.mkdirSync('cocos');
 }
-fs.writeFileSync('cocos/Tween.min.js', code.code);
-fs.writeFileSync('cocos/Tween.min.js.map', code.map);
+fs.writeFileSync('cocos/build/Tween.min.js', code.code);
+fs.writeFileSync('cocos/build/Tween.min.js.map', code.map);
